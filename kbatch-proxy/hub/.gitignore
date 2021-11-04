@@ -1,6 +1,0 @@
-*.pid
-*.sqlite
-jupyterhub_cookie_secret
-package-lock.json
-package.json
-node_modules
