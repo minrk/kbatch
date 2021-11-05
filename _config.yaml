@@ -1,0 +1,10 @@
+title: kbatch Helm charts for Kubernetes
+description: This site stores Helm chart tarballs for kabtch
+theme: minima
+url: "https://kbatch-dev.github.io/kbatch"
+repo_name: kbatch
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - .gitignore
