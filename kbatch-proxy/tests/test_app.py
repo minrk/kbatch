@@ -67,7 +67,5 @@ def test_error_handling(mock_hub_auth):
     response = client.get("/jobs/nosuchjob", headers={"Authorization": "token abc"})
     err = json.loads(response.read().decode("utf8"))
     assert response.status_code == 404
-    assert "code" in err
     assert err["code"] == 404
-    assert "message" in err
     assert "nosuchjob" in err["message"]

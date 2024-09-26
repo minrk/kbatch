@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 from typing import List, Optional, Tuple, Dict, Union
@@ -173,10 +174,14 @@ async def kubernetes_exception_handler(
     request: Request, exc: kubernetes.client.ApiException
 ):
     """Relay kubernetes errors to users"""
-    return Response(
+    try:
+        detail = json.loads(exc.body)["message"]
+    except (ValueError, KeyError):
+        detail = exc.body
+
+    raise HTTPException(
         status_code=exc.status,
-        content=exc.body,
-        media_type=exc.headers.get("Content-Type", "text/plain"),
+        detail=detail,
     )
 
 
