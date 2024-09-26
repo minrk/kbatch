@@ -16,6 +16,8 @@ logging.basicConfig(
     datefmt="[%X]",
     handlers=[rich.logging.RichHandler()],
 )
+# don't log every http request
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 @click.group()
@@ -86,7 +88,7 @@ def delete_cronjob(cronjob_name, kbatch_url, token):
     "--output",
     help="output format",
     type=click.Choice(["json", "table"]),
-    default="json",
+    default="table",
 )
 def list_cronjobs(kbatch_url, token, output):
     """List all the cronjobs."""
@@ -118,7 +120,7 @@ def list_cronjobs(kbatch_url, token, output):
 @click.option(
     "-o",
     "--output",
-    default="json",
+    default="name",
     help="Output format.",
     type=click.Choice(["json", "name"]),
 )
@@ -209,7 +211,7 @@ def delete_job(job_name, kbatch_url, token):
     "--output",
     help="output format",
     type=click.Choice(["json", "table"]),
-    default="json",
+    default="table",
 )
 def list_jobs(kbatch_url, token, output):
     """List all the jobs."""
@@ -240,7 +242,7 @@ def list_jobs(kbatch_url, token, output):
 @click.option(
     "-o",
     "--output",
-    default="json",
+    default="name",
     help="Output format.",
     type=click.Choice(["json", "name"]),
 )
@@ -310,11 +312,11 @@ def pod():
     "--output",
     help="output format",
     type=click.Choice(["json", "table", "name"]),
-    default="json",
+    default="table",
 )
 def list_pods(kbatch_url, token, job_name, output):
     """List all the pods."""
-    result = _core.list_pods(kbatch_url, token, job_name)
+    result = _core.list_pods(job_name, kbatch_url, token)
 
     if output == "json":
         rich.print_json(data=result)
