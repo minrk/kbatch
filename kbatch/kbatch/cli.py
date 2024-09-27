@@ -80,7 +80,7 @@ def cronjob():
 
 @cronjob.command(name="show")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("cronjob_name")
 def show_cronjob(cronjob_name, kbatch_url, token):
     """Show the details for a cronjob."""
@@ -90,7 +90,7 @@ def show_cronjob(cronjob_name, kbatch_url, token):
 
 @cronjob.command(name="delete")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("cronjob_name")
 def delete_cronjob(cronjob_name, kbatch_url, token):
     """Delete a cronjob, cancelling running jobs and pods."""
@@ -100,7 +100,7 @@ def delete_cronjob(cronjob_name, kbatch_url, token):
 
 @cronjob.command(name="list")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option(
     "-o",
     "--output",
@@ -203,7 +203,7 @@ def job():
 
 @job.command(name="show")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("job_name")
 def show_job(job_name, kbatch_url, token):
     """Show the details for a job."""
@@ -213,7 +213,7 @@ def show_job(job_name, kbatch_url, token):
 
 @job.command(name="delete")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("job_name")
 def delete_job(job_name, kbatch_url, token):
     """Delete a job, cancelling running pods."""
@@ -223,7 +223,7 @@ def delete_job(job_name, kbatch_url, token):
 
 @job.command(name="list")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option(
     "-o",
     "--output",
@@ -321,7 +321,7 @@ def pod():
 
 @pod.command(name="list")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option(
     "--job-name", help="The name of the job to limit the results to.", default=None
 )
@@ -351,7 +351,7 @@ def list_pods(kbatch_url, token, job_name, output):
 @pod.command()
 @click.argument("pod_name")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option("--stream/--no-stream", help="Whether to stream the logs", default=False)
 @click.option("--read-timeout", help="Timeout for reading data", default=60, type=int)
 @click.option("--pretty/--no-pretty", default=True)
