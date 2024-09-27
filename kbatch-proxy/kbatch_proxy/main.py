@@ -238,13 +238,13 @@ async def job_logs(
     core_api, _ = get_k8s_api()
     pods = core_api.list_namespaced_pod(
         namespace=user.namespace,
-        label_selector={"batch.kubernetes.io/job-name": job_name},
+        label_selector=f"batch.kubernetes.io/job-name={job_name}",
     )
-    if not pods["items"]:
+    if not pods.items:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, detail=f"No pods found for job {job_name}"
         )
-    pod_name = pods["items"][0]["metadata"]["name"]
+    pod_name = pods.items[0].metadata.name
     return await pod_logs(pod_name, user=user, stream=stream)
 
 
