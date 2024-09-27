@@ -1,6 +1,9 @@
+import sys
 import logging
+from contextlib import contextmanager
 
 import click
+import httpx
 import rich
 import rich.logging
 from kubernetes.client.models import V1Job, V1CronJob
@@ -16,8 +19,23 @@ logging.basicConfig(
     datefmt="[%X]",
     handlers=[rich.logging.RichHandler()],
 )
-# don't log every http request
-logging.getLogger("httpx").setLevel(logging.WARNING)
+# don't log http requests or responses
+logging.getLogger("httpx").propagate = False
+
+
+@contextmanager
+def _render_http_error():
+    """Render an HTTP Error from kbatch nicely"""
+    try:
+        yield
+    except httpx.HTTPStatusError as e:
+        response = e.response
+        try:
+            response_json: dict = response.json()
+            msg = response_json["detail"]
+        except (ValueError, KeyError):
+            msg = response.text
+        sys.exit(f"kbatch-proxy error {response.status_code}: {msg}")
 
 
 @click.group()
@@ -62,7 +80,7 @@ def cronjob():
 
 @cronjob.command(name="show")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("cronjob_name")
 def show_cronjob(cronjob_name, kbatch_url, token):
     """Show the details for a cronjob."""
@@ -72,7 +90,7 @@ def show_cronjob(cronjob_name, kbatch_url, token):
 
 @cronjob.command(name="delete")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("cronjob_name")
 def delete_cronjob(cronjob_name, kbatch_url, token):
     """Delete a cronjob, cancelling running jobs and pods."""
@@ -82,7 +100,7 @@ def delete_cronjob(cronjob_name, kbatch_url, token):
 
 @cronjob.command(name="list")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option(
     "-o",
     "--output",
@@ -185,7 +203,7 @@ def job():
 
 @job.command(name="show")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("job_name")
 def show_job(job_name, kbatch_url, token):
     """Show the details for a job."""
@@ -195,7 +213,7 @@ def show_job(job_name, kbatch_url, token):
 
 @job.command(name="delete")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.argument("job_name")
 def delete_job(job_name, kbatch_url, token):
     """Delete a job, cancelling running pods."""
@@ -205,7 +223,7 @@ def delete_job(job_name, kbatch_url, token):
 
 @job.command(name="list")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option(
     "-o",
     "--output",
@@ -294,6 +312,32 @@ def submit_job(
         print(result["metadata"]["name"])
 
 
+@job.command("logs")
+@click.argument("job_name")
+@click.option("--kbatch-url", help="URL to the kbatch server.")
+@click.option("--token", help="Auth token")
+@click.option("--stream/--no-stream", help="Whether to stream the logs", default=False)
+@click.option("--read-timeout", help="Timeout for reading data", default=60, type=int)
+@click.option("--pretty/--no-pretty", default=True)
+def job_logs(job_name, kbatch_url, token, stream, pretty, read_timeout):
+    """Get the logs for a kbatch job."""
+    if pretty:
+        print = rich.print
+
+    if stream:
+        result = _core.job_logs_streaming(
+            job_name, kbatch_url, token, read_timeout=read_timeout
+        )
+    else:
+        result = _core.job_logs(job_name, kbatch_url, token, read_timeout=read_timeout)
+
+    if stream:
+        for line in result:
+            print(line)
+    else:
+        print(result)
+
+
 # POD
 @cli.group()
 def pod():
@@ -303,7 +347,7 @@ def pod():
 
 @pod.command(name="list")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option(
     "--job-name", help="The name of the job to limit the results to.", default=None
 )
@@ -330,27 +374,35 @@ def list_pods(kbatch_url, token, job_name, output):
 # TODO show pod
 
 
-@pod.command()
+@pod.command("logs")
 @click.argument("pod_name")
 @click.option("--kbatch-url", help="URL to the kbatch server.")
-@click.option("--token", help="File to execute.")
+@click.option("--token", help="kbatch auth token")
 @click.option("--stream/--no-stream", help="Whether to stream the logs", default=False)
 @click.option("--read-timeout", help="Timeout for reading data", default=60, type=int)
 @click.option("--pretty/--no-pretty", default=True)
-def logs(pod_name, kbatch_url, token, stream, pretty, read_timeout):
+def pod_logs(pod_name, kbatch_url, token, stream, pretty, read_timeout):
     """Get the logs for a kbatch pod."""
     if pretty:
         print = rich.print
 
     if stream:
-        result = _core.logs_streaming(
+        result = _core.pod_logs_streaming(
             pod_name, kbatch_url, token, read_timeout=read_timeout
         )
     else:
-        result = _core.logs(pod_name, kbatch_url, token, read_timeout=read_timeout)
+        result = _core.pod_logs(pod_name, kbatch_url, token, read_timeout=read_timeout)
 
     if stream:
         for line in result:
             print(line)
     else:
         print(result)
+
+
+def main():
+    """Launch kbatch CLI"""
+    # catch and format HTTP errors
+    # not sure if there's a better way to inject this into cli() itself?
+    with _render_http_error():
+        cli()
