@@ -33,9 +33,7 @@ $ pytest -v ./kbatch-proxy
 To perform `mypy` type checking, run
 
 ```
-$ mypy ./kbatch
-...
-$ mypy ./kbatch-proxy
+pre-commit run mypy --all-files
 ```
 
 ### To build the docs locally
@@ -59,7 +57,7 @@ We don't have a fully working docker-ized setup, since we (i.e. Tom) don't know 
 ### Create a cluster
 
 ```
-$ k3d cluster create ksubmit
+$ k3d cluster create kbatch
 ```
 
 ### Create a Hub
